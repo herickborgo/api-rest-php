@@ -1,0 +1,32 @@
+version: '3.4'
+
+services:
+  postgres:
+    build:
+      context: .
+      target: postgres
+    container_name: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: tests
+      POSTGRES_USER: tests
+      POSTGRES_PASSWORD: tests
+
+  app:
+    build:
+      context: .
+      target: php
+    container_name: app
+    working_dir: /var/www/app
+    depends_on:
+      - postgres
+    volumes:
+      - ./:/var/www/app/
+      - ./php.ini:/usr/local/etc/php/php.ini
+    ports:
+      - 8080:8080
+    command: php -S 0.0.0.0:8080
+
+volumes:
+  pgdata:
