@@ -1,4 +1,4 @@
-FROM php:7.2-fpm as php
+FROM php:7.4-fpm as php
 
 LABEL maintainer=<hericoborgo1@gmail.com>
 
@@ -8,21 +8,10 @@ RUN echo 'Install phpunit' && \
 	chmod +x phpunit && \
 	mv phpunit /usr/local/bin/phpunit
 
-RUN echo 'Install composer' && \
-	wget --no-check-certificate -O composer https://getcomposer.org/composer.phar && \
-	chmod +x composer && \
-	mv composer /usr/local/bin/composer
-
 RUN rm /etc/apt/preferences.d/no-debian-php
 
-RUN echo 'Install pdo_pgsql' && \
+RUN echo 'Install pdo_mysql' && \
 	apt-get update -y && apt-get install -y libpq-dev && \
-	docker-php-ext-install -j$(nproc) pgsql && \
-	docker-php-ext-install -j$(nproc) pdo_pgsql && \
-	docker-php-ext-enable pgsql pdo_pgsql
-
-FROM postgres:9.4 as postgres
-
-LABEL maintainer=<hericoborgo1@gmail.com>
-
-RUN chmod -R 777 /var/lib/postgresql
+	docker-php-ext-install mysqli && \
+	docker-php-ext-install pdo_mysql && \
+	docker-php-ext-enable mysqli pdo_mysql

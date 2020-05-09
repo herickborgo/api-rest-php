@@ -2,7 +2,6 @@
 
 namespace Config\Router;
 
-
 class Router
 {
     /** @var array */
@@ -15,11 +14,6 @@ class Router
         $this->namespace = $namespace;
     }
 
-    private function getMethodsWithBody()
-    {
-        return ['get', 'delete'];
-    }
-
     /**
      * @return void
      * @throws \Exception
@@ -28,6 +22,9 @@ class Router
     {
         try {
             $input = json_decode(file_get_contents('php://input'), true);
+            if (is_null($input)) {
+                $input = [];
+            }
             $request = array_merge($input, $_GET);
             $uriParts = $this->getPartsOfUri();
             if (count($uriParts) === 1 && empty($uriParts[0])) {
@@ -35,7 +32,8 @@ class Router
                 echo "<div style='top: 45%; left: 45%; position: absolute;'>API REST PHP</div>";
                 return;
             }
-            $routesByRequestMethod = $this->getRoutesByRequestMethod();
+            $routesByRequestMethod = $this->getRoutesByContext($uriParts[0]);
+
             $routesKeys = array_keys($routesByRequestMethod);
             $paramsOfUri = [];
             $routeCalled = '';
@@ -49,7 +47,7 @@ class Router
 
                 foreach ($routeParts as $routePart) {
                     if ($routePart === $uriParts[$indexParam]) {
-                        $routeCalled .= '/'. $routePart;
+                        $routeCalled .= '/' . $routePart;
                         $indexParam++;
                         continue;
                     }
@@ -65,7 +63,14 @@ class Router
                     $indexParam++;
                 }
             }
+            if (!$routeCalled) {
+                throw new \Exception('Route not found', 404);
+            }
             $callbacks = explode('@', $routesByRequestMethod[$routeCalled]['callback']);
+            $middleware = $routesByRequestMethod[$routeCalled]['middleware'];
+            foreach ($middleware as $middle) {
+                new $middle();
+            }
             $className = $this->namespace . $callbacks[0];
             $controller = new $className();
             if (!in_array($this->getRequestMethod(), $this->getMethodsWithBody())) {
@@ -76,67 +81,6 @@ class Router
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage(), $e->getCode());
         }
-    }
-
-    /**
-     * @param $route
-     * @param $callback
-     */
-    public function get($route, $callback)
-    {
-        $this->registerRoute('get', $route, $callback);
-    }
-
-    /**
-     * @param $method
-     * @param $route
-     * @param $callback
-     */
-    public function registerRoute($method, $route, $callback)
-    {
-        preg_match('/[{][(a-zA-Z)]*[}]/', $route, $params);
-        $this->routes[$method][$route]['callback'] = $callback;
-        $this->routes[$method][$route]['params'] = [];
-        foreach ($params as $item) {
-            $param = str_replace(['{', '}'], '', $item);
-            array_push($this->routes[$method][$route]['params'], $param);
-        }
-    }
-
-    /**
-     * @param $route
-     * @param $callback
-     */
-    public function post($route, $callback)
-    {
-        $this->registerRoute('post', $route, $callback);
-    }
-
-    /**
-     * @param $route
-     * @param $callback
-     */
-    public function put($route, $callback)
-    {
-        $this->registerRoute('put', $route, $callback);
-    }
-
-    /**
-     * @param $route
-     * @param $callback
-     */
-    public function delete($route, $callback)
-    {
-        $this->registerRoute('delete', $route, $callback);
-    }
-
-    /**
-     * @param $route
-     * @param $callback
-     */
-    public function patch($route, $callback)
-    {
-        $this->registerRoute('patch', $route, $callback);
     }
 
     /**
@@ -158,6 +102,13 @@ class Router
         return ltrim($string, '/');
     }
 
+    private function getRoutesByRequestMethod(): array
+    {
+        $requestMethod = $this->getRequestMethod();
+
+        return $this->getRoutes()[$requestMethod];
+    }
+
     /**
      * @return string
      */
@@ -166,17 +117,94 @@ class Router
         return strtolower($_SERVER['REQUEST_METHOD']);
     }
 
-    /**
-     * @return mixed
-     */
-    private function getRoutesByRequestMethod()
-    {
-        $requestMethod = $this->getRequestMethod();
-        return $this->routes[$requestMethod];
-    }
-
     public function getRoutes()
     {
         return $this->routes;
+    }
+
+    private function getMethodsWithBody()
+    {
+        return ['get', 'delete'];
+    }
+
+    /**
+     * @param string $route
+     * @param $callback
+     * @param array $middleware
+     */
+    public function get(string $route, $callback, array $middleware = [])
+    {
+        $this->registerRoute('get', $route, $callback, $middleware);
+    }
+
+    /**
+     * @param $method
+     * @param $route
+     * @param $callback
+     * @param array $middleware
+     */
+    public function registerRoute($method, $route, $callback, array $middleware = [])
+    {
+        preg_match('/[{][(a-zA-Z)]*[}]/', $route, $params);
+        $this->routes[$method][$route]['callback'] = $callback;
+        $this->routes[$method][$route]['params'] = [];
+        $this->routes[$method][$route]['middleware'] = $middleware;
+        foreach ($params as $item) {
+            $param = str_replace(['{', '}'], '', $item);
+            array_push($this->routes[$method][$route]['params'], $param);
+        }
+    }
+
+    /**
+     * @param $route
+     * @param $callback
+     * @param array $middleware
+     */
+    public function post($route, $callback, array $middleware = [])
+    {
+        $this->registerRoute('post', $route, $callback, $middleware);
+    }
+
+    /**
+     * @param $route
+     * @param $callback
+     * @param array $middleware
+     */
+    public function put($route, $callback, array $middleware = [])
+    {
+        $this->registerRoute('put', $route, $callback, $middleware);
+    }
+
+    /**
+     * @param $route
+     * @param $callback
+     * @param array $middleware
+     */
+    public function delete($route, $callback, array $middleware = [])
+    {
+        $this->registerRoute('delete', $route, $callback, $middleware);
+    }
+
+    /**
+     * @param $route
+     * @param $callback
+     * @param array $middleware
+     */
+    public function patch($route, $callback, array $middleware = [])
+    {
+        $this->registerRoute('patch', $route, $callback, $middleware);
+    }
+
+    private function getRoutesByContext(string $context)
+    {
+        $routes = $this->getRoutesByRequestMethod();
+
+        $response = [];
+        foreach ($routes as $key => $val) {
+            if (preg_match('/' . $context . '/', $key)) {
+                $response[$key] = $val;
+            }
+        }
+        return $response;
     }
 }

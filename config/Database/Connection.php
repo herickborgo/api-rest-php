@@ -13,15 +13,13 @@ class Connection
 	{
 		$config = include 'connection_config.php';
 		$stringConnect = sprintf(
-			'%s:host=%s;port=%s;dbname=%s;user=%s;password=%s',
+			'%s:host=%s;port=%s;dbname=%s',
 			$config['db'],
 			$config['host'],
 			$config['port'],
-			$config['database'],
-			$config['user'],
-			$config['password']
+			$config['database']
 		);
-		$this->connection = new PDO($stringConnect);
+		$this->connection = new PDO($stringConnect, $config['user'], $config['password']);
 	}
 
 	public static function connect()
@@ -60,4 +58,9 @@ class Connection
 			$this->runSQL($sql);
 		}
 	}
+
+    public function getUser()
+    {
+
+    }
 }

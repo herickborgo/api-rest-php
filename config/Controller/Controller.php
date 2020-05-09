@@ -11,7 +11,9 @@ class Controller
     	$controller = get_class($this);
     	$serviceClass = str_replace('Controller', 'Service', $controller);
     	if (class_exists($serviceClass)) {
-    		$this->service = new $serviceClass();
-    	}
+            $this->service = new $serviceClass();
+        } else {
+    	    $this->service = null;
+        }
     }
 }

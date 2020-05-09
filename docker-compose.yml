@@ -1,17 +1,19 @@
 version: '3.4'
 
 services:
-  postgres:
-    build:
-      context: .
-      target: postgres
-    container_name: postgres
+  mysql:
+    image: mysql:5.7
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysql:/var/lib/mysql
+    ports:
+      - 33062:3306
     environment:
-      POSTGRES_DB: tests
-      POSTGRES_USER: tests
-      POSTGRES_PASSWORD: tests
+      - MYSQL_DATABASE=tests
+      - MYSQL_USER=tests
+      - MYSQL_PASSWORD=tests
+      - MYSQL_ROOT_PASSWORD=tests
+    networks:
+      - tests
 
   app:
     build:
@@ -20,13 +22,20 @@ services:
     container_name: app
     working_dir: /var/www/app
     depends_on:
-      - postgres
+      - mysql
     volumes:
       - ./:/var/www/app/
       - ./php.ini:/usr/local/etc/php/php.ini
     ports:
       - 8080:8080
     command: php -S 0.0.0.0:8080
+    networks:
+      - tests
 
 volumes:
-  pgdata:
+  mysql:
+    external: true
+
+networks:
+  tests:
+    external: true

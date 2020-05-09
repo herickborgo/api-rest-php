@@ -1,9 +1,9 @@
 <?php
 
 return [
-	'db' => 'pgsql',
-	'host' => 'postgres',
-	'port' => '5432',
+	'db' => 'mysql',
+	'host' => 'mysql',
+	'port' => '3306',
 	'database' => 'tests',
 	'user' => 'tests',
 	'password' => 'tests',
