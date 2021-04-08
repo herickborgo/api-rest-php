@@ -15,3 +15,9 @@ RUN echo 'Install pdo_mysql' && \
 	docker-php-ext-install mysqli && \
 	docker-php-ext-install pdo_mysql && \
 	docker-php-ext-enable mysqli pdo_mysql
+
+RUN echo 'Install pdo_pgsql' && \
+	apt-get update -y && apt-get install -y libpq-dev && \
+	docker-php-ext-install pgsql && \
+	docker-php-ext-install pdo_pgsql && \
+  docker-php-ext-enable pgsql pdo_pgsql

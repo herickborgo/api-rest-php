@@ -6,36 +6,36 @@ services:
     volumes:
       - mysql:/var/lib/mysql
     ports:
-      - 33062:3306
+      - 33061:3306
     environment:
-      - MYSQL_DATABASE=tests
-      - MYSQL_USER=tests
-      - MYSQL_PASSWORD=tests
-      - MYSQL_ROOT_PASSWORD=tests
+      - MYSQL_DATABASE=rest_api
+      - MYSQL_USER=rest_api
+      - MYSQL_PASSWORD=rest_api
+      - MYSQL_ROOT_PASSWORD=rest_api
     networks:
-      - tests
+      - rest-api
 
   app:
     build:
       context: .
       target: php
     container_name: app
-    working_dir: /var/www/app
+    working_dir: /usr/share/nginx/html
     depends_on:
       - mysql
     volumes:
-      - ./:/var/www/app/
+      - ./:/usr/share/nginx/html
       - ./php.ini:/usr/local/etc/php/php.ini
     ports:
       - 8080:8080
-    command: php -S 0.0.0.0:8080
+    command: php -S 0.0.0.0:8080 -t public/
     networks:
-      - tests
+      - rest-api
 
 volumes:
   mysql:
     external: true
 
 networks:
-  tests:
+  rest-api:
     external: true

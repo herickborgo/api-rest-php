@@ -1,1 +1,8 @@
-/data
+# directories
+data/
+vendor/
+
+# files
+.php_cs.cache
+.phpunit.result.cache
+.env
